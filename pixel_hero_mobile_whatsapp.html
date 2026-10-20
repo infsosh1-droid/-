@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4263eb">
+<title>Пиксельный герой — мобильная игра</title>
+<style>
+:root{--ink:#202d49;--blue:#4263eb;--mint:#dff8ee;--paper:#f3f6ff;--line:#dce3f3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:linear-gradient(160deg,#edf1ff,#e6fff4);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:16px}
+.wrap{width:100%;max-width:620px;margin:auto;padding:12px 12px 28px}
+header{padding:8px 2px 12px}.topline{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-size:11px;letter-spacing:.6px;font-weight:900;background:#ffe08a;border-radius:8px;padding:7px 9px;display:inline-block}
+h1{font-size:clamp(27px,7vw,38px);line-height:1.05;margin:12px 0 7px;letter-spacing:-.8px}
+.sub{font-size:14px;line-height:1.45;color:#596782}
+.stats{display:flex;gap:7px}.pill{background:white;padding:8px 10px;border-radius:13px;font-size:14px;font-weight:800;box-shadow:0 3px 12px #26375b10;white-space:nowrap}
+.progress{height:9px;background:#dce3f3;border-radius:20px;overflow:hidden;margin:8px 0 14px}.bar{height:100%;width:0;background:linear-gradient(90deg,#4263eb,#37c99a);transition:width .3s}
+.card{background:#fff;border-radius:20px;padding:20px 17px;box-shadow:0 9px 25px #26375b12;margin:12px 0}
+h2{font-size:23px;line-height:1.2;margin:12px 0}p{line-height:1.55;margin:10px 0}
+.robot{text-align:center;font-size:76px;margin:4px 0}.helper{font-size:12px;color:#71809a;text-align:center}
+button{font:inherit;font-weight:800;border:0;border-radius:14px;padding:14px 15px;min-height:48px;cursor:pointer;touch-action:manipulation}
+.primary{background:var(--blue);color:white;width:100%;box-shadow:0 5px 0 #3049c0}
+.primary:active{transform:translateY(2px);box-shadow:0 3px 0 #3049c0}
+.secondary{background:#e9edff;color:#3149a8}
+.choice{display:block;width:100%;text-align:left;margin:9px 0;background:#f1f4ff;color:var(--ink);border:2px solid transparent;line-height:1.35;padding:13px 12px;min-height:54px}
+.choice.correct{background:#def8e8;border-color:#35a66b}.choice.wrong{background:#ffe6e6;border-color:#df5555}.choice:disabled{opacity:1}
+.feedback{padding:12px;border-radius:12px;margin-top:12px;line-height:1.45;font-size:14px}.good{background:#dff8e9}.bad{background:#ffe8e8}
+.small{font-size:13px;color:#71809a}.row{display:flex;gap:9px;align-items:center;justify-content:space-between;margin-top:16px}
+.hidden{display:none!important}.pixel-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:3px;width:min(100%,360px);margin:16px auto}
+.pixel{aspect-ratio:1;min-height:0;min-width:0;padding:0;border-radius:4px;border:1px solid #cbd3e4;background:#fff;touch-action:manipulation}
+.palette{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px 0}.color{width:42px;height:42px;min-height:42px;padding:0;border:3px solid #fff;box-shadow:0 0 0 1px #cbd3e4}.color.selected{outline:3px solid var(--blue)}
+.draw-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.draw-actions button{padding:12px 8px}
+.end{text-align:center}.trophy{font-size:65px}.big-score{font-size:42px;font-weight:950;color:var(--blue);margin:12px}
+.footer{text-align:center;font-size:12px;color:#74809a;padding:10px}
+@media(min-width:480px){.wrap{padding:20px}.card{padding:25px}.robot{font-size:90px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+ <div class="topline"><span class="tag">ИНФОРМАТИКА · 5 КЛАСС</span><div class="stats"><div class="pill">⭐ <span id="score">0</span></div><div class="pill">❤️ <span id="lives">3</span></div></div></div>
+ <h1>🕹️ Пиксельный герой</h1><div class="sub">Миссия: исследуй пиксели, пройди испытания и создай свой рисунок!</div>
+</header>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<section class="card" id="intro">
+ <div class="robot">🤖</div><div class="helper">Твой помощник Пиксель</div>
+ <h2>Привет, исследователь!</h2>
+ <p>Готов(а) спасти цифровой мир? Ответь на вопросы о растровых изображениях, а затем нарисуй картинку из цветных пикселей.</p>
+ <p>✅ Верный ответ — <b>10 баллов</b>.<br>💗 У тебя есть <b>3 жизни</b>.<br>🎨 В творческом задании раскрась не менее 8 клеток.</p>
+ <button class="primary" onclick="startGame()">Начать игру 🚀</button>
+</section>
+<section class="card hidden" id="quiz">
+ <span class="tag" id="levelTag">УРОВЕНЬ 1</span><h2 id="qTitle"></h2><p id="qText"></p><div id="answers"></div><div id="feedback" aria-live="polite"></div>
+ <div class="row"><span class="small" id="counter"></span><button class="secondary" id="nextBtn" onclick="nextQuestion()" disabled>Дальше →</button></div>
+</section>
+<section class="card hidden" id="draw">
+ <span class="tag">ФИНАЛЬНОЕ ЗАДАНИЕ</span><h2>🎨 Нарисуй пиксель-арт!</h2>
+ <p>Выбери цвет и нажимай на клетки сетки. Нарисуй сердечко, робота или своего героя. Можно закрасить клетки разными цветами.</p>
+ <div class="palette" id="palette"></div><div class="pixel-grid" id="pixelGrid"></div>
+ <div class="draw-actions"><button class="primary" onclick="checkDrawing()">Готово! 💗</button><button class="secondary" onclick="clearGrid()">Очистить</button></div>
+ <div id="drawFeedback" aria-live="polite"></div>
+</section>
+<section class="card end hidden" id="finish">
+ <div class="trophy">🏆</div><h2 id="finishTitle">Миссия выполнена!</h2><p id="ending"></p><div class="big-score" id="finalScore"></div><p id="rank"></p><button class="primary" onclick="restart()">Играть ещё раз ↻</button>
+</section>
+<div class="footer">Пиксельный герой · Учись играя!</div>
+</main>
+<script>
+const questions=[
+{level:1,title:"Что такое пиксель?",text:"Выбери правильное определение.",answers:["Маленькая точка изображения на экране","Устройство для печати","Название компьютерной игры"],correct:0,why:"Пиксель — наименьший элемент растрового изображения."},
+{level:1,title:"Из чего состоит растровое изображение?",text:"Подумай, как устроена цифровая фотография.",answers:["Из звуков","Из сетки цветных пикселей","Только из букв"],correct:1,why:"Растровое изображение состоит из множества цветных пикселей."},
+{level:1,title:"Где часто встречаются растровые изображения?",text:"Выбери пример.",answers:["В цифровой фотографии","Только в калькуляторе","Только в аудиозаписи"],correct:0,why:"Цифровые фотографии обычно являются растровыми изображениями."},
+{level:2,title:"Что будет при сильном увеличении маленькой картинки?",text:"Представь, что увеличиваешь фотографию на экране.",answers:["Станут заметны квадратики-пиксели","Картинка превратится в музыку","Все цвета обязательно исчезнут"],correct:0,why:"При увеличении пиксели становятся заметнее, изображение может выглядеть зернистым."},
+{level:2,title:"Что означает размер изображения 800 × 600?",text:"Выбери правильный ответ.",answers:["800 цветов и 600 звуков","800 пикселей по ширине и 600 по высоте","800 файлов и 600 папок"],correct:1,why:"Размер в пикселях показывает количество пикселей по ширине и высоте."},
+{level:2,title:"Какое устройство помогает получить растровую фотографию?",text:"Выбери один вариант.",answers:["Камера телефона или фотоаппарат","Колонки","Микрофон без камеры"],correct:0,why:"Камера создаёт цифровые фотографии, которые обычно хранятся в растровом формате."},
+{level:3,title:"Что такое пиксельная сетка?",text:"В ней каждая клетка может быть отдельного цвета.",answers:["Сетка для создания рисунка из клеток","Звуковая дорожка","Таблица умножения"],correct:0,why:"Пиксельная сетка помогает создавать изображения из цветных клеток."},
+{level:3,title:"Как выглядит пиксель-арт?",text:"Он часто напоминает графику старых видеоигр.",answers:["Обычная фотография без пикселей","Рисунок из заметных квадратных цветных клеток","Записанный голос"],correct:1,why:"В пиксель-арте форма создаётся отдельными видимыми пикселями."},
+{level:3,title:"Как создать собственный пиксельный рисунок?",text:"Выбери подходящее действие.",answers:["Расставить цветные пиксели в сетке","Добавить только звук","Удалить все клетки"],correct:0,why:"Пиксельный рисунок создают, аккуратно размещая цветные пиксели в сетке."}
+];
+let order=[],index=0,score=0,lives=3,answered=false,currentColor="#e94d86",drawingFinished=false;
+const $=id=>document.getElementById(id);
+function updateStats(){$("score").textContent=score;$("lives").textContent=lives;$("bar").style.width=Math.min(100,index/(questions.length+1)*100)+"%"}
+function startGame(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");$("finish").classList.add("hidden");order=[...questions.keys()];index=0;score=0;lives=3;drawingFinished=false;updateStats();showQuestion();window.scrollTo(0,0)}
+function showQuestion(){if(lives<=0){finishGame(false);return}if(index>=order.length){$("quiz").classList.add("hidden");$("draw").classList.remove("hidden");makeGrid();window.scrollTo(0,0);return}
+answered=false;const q=questions[order[index]];$("levelTag").textContent="УРОВЕНЬ "+q.level;$("qTitle").textContent=q.title;$("qText").textContent=q.text;$("counter").textContent=`Вопрос ${index+1} из ${questions.length}`;$("feedback").innerHTML="";$("nextBtn").disabled=true;$("answers").innerHTML="";
+q.answers.forEach((a,i)=>{const b=document.createElement("button");b.className="choice";b.textContent=["A","B","C"][i]+". "+a;b.onclick=()=>chooseAnswer(i,b);$("answers").appendChild(b)});updateStats()}
+function chooseAnswer(i,btn){if(answered)return;answered=true;const q=questions[order[index]];[...$("answers").children].forEach((b,j)=>{b.disabled=true;if(j===q.correct)b.classList.add("correct")});if(i===q.correct){score+=10;$("feedback").innerHTML=`<div class="feedback good">✅ Верно! ${q.why}<br><b>+10 баллов</b></div>`}else{lives--;$("feedback").innerHTML=`<div class="feedback bad">❌ Не совсем! ${q.why}<br>Осталось жизней: ${lives}.</div>`;btn.classList.add("wrong")}updateStats();$("nextBtn").disabled=false}
+function nextQuestion(){index++;if(lives<=0){finishGame(false);return}showQuestion();window.scrollTo(0,0)}
+const colors=["#ffffff","#202d49","#e94d86","#ffcf56","#48b6a5","#4263eb","#9b70d6"];
+function makeGrid(){$("pixelGrid").innerHTML="";for(let i=0;i<64;i++){const b=document.createElement("button");b.className="pixel";b.setAttribute("aria-label","Клетка "+(i+1));b.onclick=()=>{b.style.background=currentColor};$("pixelGrid").appendChild(b)}
+$("palette").innerHTML="";colors.slice(1).forEach(c=>{const b=document.createElement("button");b.className="color"+(c===currentColor?" selected":"");b.style.background=c;b.setAttribute("aria-label","Выбрать цвет");b.onclick=()=>{currentColor=c;[...$("palette").children].forEach(x=>x.classList.remove("selected"));b.classList.add("selected")};$("palette").appendChild(b)});$("drawFeedback").innerHTML=""}
+function clearGrid(){[...$("pixelGrid").children].forEach(b=>b.style.background="#ffffff");$("drawFeedback").innerHTML=""}
+function checkDrawing(){if(drawingFinished)return;const filled=[...$("pixelGrid").children].filter(b=>b.style.background&&b.style.background!=="rgb(255, 255, 255)"&&b.style.background!=="#ffffff").length;if(filled<8){$("drawFeedback").innerHTML='<div class="feedback bad">Раскрась хотя бы 8 клеток, чтобы рисунок был заметен. Ты справишься!</div>';return}
+drawingFinished=true;score+=20;$("drawFeedback").innerHTML='<div class="feedback good">🎉 Здорово! Ты создал(а) рисунок из пикселей! +20 баллов.</div>';updateStats();setTimeout(()=>finishGame(true),1000)}
+function finishGame(completed){$("quiz").classList.add("hidden");$("draw").classList.add("hidden");$("finish").classList.remove("hidden");$("bar").style.width="100%";$("finishTitle").textContent=completed?"Миссия выполнена!":"Попробуем ещё раз?";$("finalScore").textContent=score+" баллов";$("ending").textContent=completed?"Ты прошёл(ла) задания и создал(а) собственный пиксельный рисунок!":"Жизни закончились. Теперь ты знаешь больше о пикселях — попробуй пройти игру снова."; $("rank").textContent=score>=90?"🏅 Звание: Мастер пикселей!":score>=60?"🌟 Звание: Уверенный исследователь!":"💡 Звание: Начинающий художник пикселей. Тренируйся и возвращайся!";window.scrollTo(0,0)}
+function restart(){$("finish").classList.add("hidden");$("intro").classList.remove("hidden");$("draw").classList.add("hidden");$("quiz").classList.add("hidden");$("bar").style.width="0%";$("score").textContent="0";$("lives").textContent="3";drawingFinished=false;window.scrollTo(0,0)}
+</script>
+</body>
+</html>
